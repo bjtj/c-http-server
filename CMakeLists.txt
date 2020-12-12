@@ -8,10 +8,11 @@ enable_testing()
 add_test(NAME mytest COMMAND Test)
 
 include(ExternalProject)
-ExternalProject_Add(osl-c
+ExternalProject_Add(oslc
   GIT_REPOSITORY    git@github.com:bjtj/osl-c.git
-  GIT_TAG           origin/release/1.0.0
-)
+  GIT_TAG           1.0.0
+  INSTALL_COMMAND   ""
+  )
 
 # pkgconfig
 set(DEST_DIR "${CMAKE_INSTALL_PREFIX}")
