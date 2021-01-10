@@ -1,5 +1,12 @@
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-add_library(chttpserver SHARED hello.c)
+add_library(chttpserver SHARED
+  header.c
+  server.c)
 target_include_directories(chttpserver PRIVATE .)
+target_link_libraries(chttpserver PkgConfig::LIBOSL)
 install(TARGETS chttpserver DESTINATION lib)
-install(FILES hello.h DESTINATION include)
+install(FILES
+  header.h
+  server.h
+  DESTINATION include)
+
+

@@ -1,18 +1,18 @@
 cmake_minimum_required(VERSION 3.5)
-project(chttpserver)
+project(chttpserver LANGUAGES C VERSION "1.0.0")
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBOSL REQUIRED IMPORTED_TARGET osl)
+include(CTest)
+
+find_package (Threads REQUIRED)
+set(CMAKE_C_FLAGS -pthread)
+set(CMAKE_C_FLAGS -pthread)
 
 # 
 add_subdirectory(src)
-add_subdirectory(test)
 enable_testing()
-add_test(NAME mytest COMMAND Test)
-
-include(ExternalProject)
-ExternalProject_Add(oslc
-  GIT_REPOSITORY    git@github.com:bjtj/osl-c.git
-  GIT_TAG           1.0.0
-  INSTALL_COMMAND   ""
-  )
+add_subdirectory(test)
 
 # pkgconfig
 set(DEST_DIR "${CMAKE_INSTALL_PREFIX}")
