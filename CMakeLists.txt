@@ -11,6 +11,7 @@ set(CMAKE_C_FLAGS -pthread)
 
 # 
 add_subdirectory(src)
+add_subdirectory(bin)
 enable_testing()
 add_subdirectory(test)
 
