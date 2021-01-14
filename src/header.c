@@ -161,16 +161,16 @@ osl_bool chttpserver_header_field_compare_name(chttpserver_header_field_t * fiel
     return osl_string_equals_ignorecase(field->name, name);
 }
 
-chttpserver_header_t * chttpserver_header_read(const char * header_string)
+chttpserver_header_t * chttpserver_header_from_str(const char * header_string)
 {
     chttpserver_header_t * header = chttpserver_header_new();
-    header->firstline = chttpserver_header_firstline_read(header_string);
+    header->firstline = chttpserver_header_firstline_from_str(header_string);
     const char * fields_string = osl_string_find(header_string, "\r\n") + 2;
-    header->fields = chttpserver_header_fields_read(fields_string);
+    header->fields = chttpserver_header_fields_from_str(fields_string);
     return header;
 }
     
-chttpserver_header_firstline_t * chttpserver_header_firstline_read(const char * header)
+chttpserver_header_firstline_t * chttpserver_header_firstline_from_str(const char * header)
 {
     chttpserver_header_firstline_t * firstline = NULL;
     const char * space = NULL;
@@ -201,14 +201,14 @@ chttpserver_header_firstline_t * chttpserver_header_firstline_read(const char * 
     return firstline;
 }
 
-osl_list_t * chttpserver_header_fields_read(const char * fields_string)
+osl_list_t * chttpserver_header_fields_from_str(const char * fields_string)
 {
     osl_list_t * fields = NULL;
     const char * ptr = fields_string;
     const char * end = osl_string_find(ptr, "\r\n");
     while (end && ptr != end)
     {
-	chttpserver_header_field_t * field = chttpserver_header_field_read(ptr);
+	chttpserver_header_field_t * field = chttpserver_header_field_from_str(ptr);
 	fields = osl_list_append(fields, field);
 	ptr = end + 2;
 	end = osl_string_find(ptr, "\r\n");
@@ -216,7 +216,7 @@ osl_list_t * chttpserver_header_fields_read(const char * fields_string)
     return fields;
 }
 
-chttpserver_header_field_t * chttpserver_header_field_read(const char * line)
+chttpserver_header_field_t * chttpserver_header_field_from_str(const char * line)
 {
     chttpserver_header_field_t * result = NULL;
     const char * end = osl_string_find(line, "\r\n");

@@ -47,10 +47,10 @@ extern "C" {
     extern OSL_EXPORT void chttpserver_header_field_free(chttpserver_header_field_t * field);
     extern OSL_EXPORT osl_bool chttpserver_header_field_compare_name(chttpserver_header_field_t * field, const char * name);
 
-    extern OSL_EXPORT chttpserver_header_t * chttpserver_header_read(const char * header);
-    extern OSL_EXPORT chttpserver_header_firstline_t * chttpserver_header_firstline_read(const char * header);
-    extern OSL_EXPORT osl_list_t * chttpserver_header_fields_read(const char * fields);
-    extern OSL_EXPORT chttpserver_header_field_t * chttpserver_header_field_read(const char * line);
+    extern OSL_EXPORT chttpserver_header_t * chttpserver_header_from_str(const char * header);
+    extern OSL_EXPORT chttpserver_header_firstline_t * chttpserver_header_firstline_from_str(const char * header);
+    extern OSL_EXPORT osl_list_t * chttpserver_header_fields_from_str(const char * fields);
+    extern OSL_EXPORT chttpserver_header_field_t * chttpserver_header_field_from_str(const char * line);
 
 #ifdef __cplusplus
 }

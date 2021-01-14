@@ -4,6 +4,7 @@
 #include "server.h"
 #include "header.h"
 #include "request.h"
+#include "response.h"
 
 static chttpserver_header_t * _read_header(chttpserver_server_t * server, osl_socket sock)
 {
@@ -21,12 +22,17 @@ static chttpserver_header_t * _read_header(chttpserver_server_t * server, osl_so
 	}
 	osl_string_buffer_append_buffer(sb, &ch, 1);
 	if (sb->len > 4 && osl_strcmp(sb->ptr + sb->len - 4, "\r\n\r\n") == 0) {
-	    header = chttpserver_header_read(sb->ptr);
+	    header = chttpserver_header_from_str(sb->ptr);
 	    break;
 	}
     }
     osl_string_buffer_free(sb);
     return header;
+}
+
+chttpserver_header_t * chttpserver_read_header(osl_socket sock)
+{
+    return _read_header(NULL, sock);
 }
 
 static void _route(chttpserver_request_t * req)

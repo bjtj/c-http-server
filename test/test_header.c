@@ -4,7 +4,7 @@
 
 void test_parse_header_firstline1(void)
 {
-    chttpserver_header_firstline_t * firstline = chttpserver_header_firstline_read("GET / HTTP/1.1\r\n");
+    chttpserver_header_firstline_t * firstline = chttpserver_header_firstline_from_str("GET / HTTP/1.1\r\n");
     assert(strcmp(firstline->part1, "GET") == 0);
     assert(strcmp(firstline->part2, "/") == 0);
     assert(strcmp(firstline->part3, "HTTP/1.1") == 0);
@@ -13,7 +13,7 @@ void test_parse_header_firstline1(void)
 
 void test_parse_header_firstline2(void)
 {
-    chttpserver_header_firstline_t * firstline = chttpserver_header_firstline_read("GET / HTTP/1.1");
+    chttpserver_header_firstline_t * firstline = chttpserver_header_firstline_from_str("GET / HTTP/1.1");
     assert(strcmp(firstline->part1, "GET") == 0);
     assert(strcmp(firstline->part2, "/") == 0);
     assert(strcmp(firstline->part3, "HTTP/1.1") == 0);
@@ -22,7 +22,7 @@ void test_parse_header_firstline2(void)
 
 void test_parse_header_firstline3(void)
 {
-    chttpserver_header_firstline_t * firstline = chttpserver_header_firstline_read("GET \t/\t\tHTTP/1.1");
+    chttpserver_header_firstline_t * firstline = chttpserver_header_firstline_from_str("GET \t/\t\tHTTP/1.1");
     assert(strcmp(firstline->part1, "GET") == 0);
     assert(strcmp(firstline->part2, "/") == 0);
     assert(strcmp(firstline->part3, "HTTP/1.1") == 0);
@@ -31,14 +31,14 @@ void test_parse_header_firstline3(void)
 
 void test_parse_fields1(void)
 {
-    osl_list_t * fields = chttpserver_header_fields_read("\r\n\r\n");
+    osl_list_t * fields = chttpserver_header_fields_from_str("\r\n\r\n");
     assert(fields == NULL);
     osl_list_free(fields, (osl_free_cb)chttpserver_header_field_free);
 }
 
 void test_parse_fields2(void)
 {
-    osl_list_t * fields = chttpserver_header_fields_read("name: value\r\n\r\n");
+    osl_list_t * fields = chttpserver_header_fields_from_str("name: value\r\n\r\n");
     assert(fields != NULL);
     /* TODO: get field test */
     osl_list_free(fields, (osl_free_cb)chttpserver_header_field_free);
@@ -46,7 +46,7 @@ void test_parse_fields2(void)
 
 void test_parse_header1(void)
 {
-    chttpserver_header_t * header = chttpserver_header_read("GET / HTTP/1.1\r\n\r\n");
+    chttpserver_header_t * header = chttpserver_header_from_str("GET / HTTP/1.1\r\n\r\n");
     assert(strcmp(header->firstline->part1, "GET") == 0);
     assert(strcmp(header->firstline->part2, "/") == 0);
     assert(strcmp(header->firstline->part3, "HTTP/1.1") == 0);

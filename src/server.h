@@ -5,6 +5,7 @@
 #include <osl/socket.h>
 #include <osl/thread.h>
 #include <osl/list.h>
+#include "header.h"
 
 struct _chttpserver_server_t;
 
@@ -25,6 +26,8 @@ typedef struct _chttpserver_server_t {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+    extern OSL_EXPORT chttpserver_header_t * chttpserver_read_header(osl_socket sock);
 
     extern OSL_EXPORT chttpserver_server_t * chttpserver_new(const char * host, int port);
     extern OSL_EXPORT osl_bool chttpserver_start(chttpserver_server_t * server);
