@@ -1,40 +1,92 @@
+#include <osl/str.h>
 #include "response.h"
+#include "status_code.h"
 
 
 chttpserver_response_t * chttpserver_response_new()
 {
-    chttpserver_response_t * req = (chttpserver_response_t*)malloc(sizeof(chttpserver_response_t));
-    if (req == NULL) {
+    chttpserver_response_t * res = (chttpserver_response_t*)malloc(sizeof(chttpserver_response_t));
+    if (res == NULL) {
 	/* TODO: exception */
 	return NULL;
     }
-    memset(req, 0, sizeof(chttpserver_response_t));
-    return req;
+    memset(res, 0, sizeof(chttpserver_response_t));
+    return res;
 }
 
-void chttpserver_response_init(chttpserver_response_t * req, chttpserver_header_t * header, osl_socket remote_sock)
+chttpserver_response_t * chttpserver_response_init(chttpserver_response_t * res, chttpserver_header_t * header, osl_socket remote_sock)
 {
-    req->header = header;
-    req->remote_sock = remote_sock;
+    res->header = header;
+    res->remote_sock = remote_sock;
+    return res;
 }
 
-void chttpserver_response_free(chttpserver_response_t * req)
+void chttpserver_response_free(chttpserver_response_t * res)
 {
-    chttpserver_header_free(req->header);
-    osl_safe_free(req);
+    chttpserver_header_free(res->header);
+    chttpserver_transfer_free(res->transfer);
+    osl_safe_free(res->content);
+    osl_safe_free(res);
 }
 
-const char * chttpserver_response_get_method(chttpserver_response_t * req)
+const char * chttpserver_response_get_protocol(chttpserver_response_t * res)
 {
-    return req->header->firstline->part1;
+    return res->header->firstline->part1;
 }
 
-const char * chttpserver_response_get_uri(chttpserver_response_t * req)
+int chttpserver_response_get_status_code(chttpserver_response_t * res)
 {
-    return req->header->firstline->part2;
+    return atoi(res->header->firstline->part2);
 }
 
-const char * chttpserver_response_get_protocol(chttpserver_response_t * req)
+const char * chttpserver_response_get_status_message(chttpserver_response_t * res)
 {
-    return req->header->firstline->part3;
+    return res->header->firstline->part3;
+}
+
+osl_bool chttpserver_response_set_protocol(chttpserver_response_t * res, chttpserver_protocol_version_e ver)
+{
+    if (res == NULL || res->header == NULL || res->header->firstline == NULL) {
+	return osl_false;
+    }
+    chttpserver_header_firstline_set_part1(res->header->firstline, chttpserver_protocol_version_to_str(ver));
+    return osl_true;
+}
+
+osl_bool chttpserver_response_set_status(chttpserver_response_t * res, int code)
+{
+    chttpserver_response_set_status_code(res, code);
+    chttpserver_response_set_status_message(res, chttpserver_status_get_message(code));
+    return osl_true;
+}
+
+osl_bool chttpserver_response_set_status_code(chttpserver_response_t * res, int code)
+{
+    char str[10] = {0,};
+    if (res == NULL || res->header == NULL || res->header->firstline == NULL) {
+	return osl_false;
+    }
+    snprintf(str, sizeof(str), "%d", code);
+    chttpserver_header_firstline_set_part2(res->header->firstline, str);
+    return osl_true;
+}
+
+osl_bool chttpserver_response_set_status_message(chttpserver_response_t * res, const char * msg)
+{
+    if (res == NULL || res->header == NULL || res->header->firstline == NULL) {
+	return osl_false;
+    }
+    chttpserver_header_firstline_set_part3(res->header->firstline, msg);
+    return osl_true;
+}
+
+osl_bool chttpserver_response_set_content(chttpserver_response_t * res, const char * type, const char * content)
+{
+    char len[10] = {0,};
+    osl_safe_free(res->content);
+    res->content = osl_strdup(content);
+    chttpserver_header_set_field_value(res->header, "Content-Type", type);
+    snprintf(len, sizeof(len), "%ld", strlen(content));
+    chttpserver_header_set_field_value(res->header, "Content-Length", len);
+    return osl_true;
 }

@@ -1,7 +1,7 @@
 #include "status_code.h"
 
 
-const char * chttpserver_status_code_get_message(int code)
+const char * chttpserver_status_get_message(int code)
 {
     switch(code)
     {

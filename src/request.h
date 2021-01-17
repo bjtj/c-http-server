@@ -3,10 +3,12 @@
 
 #include <osl/socket.h>
 #include "header.h"
+#include "transfer.h"
 
 typedef struct _chttpserver_request_t {
     chttpserver_header_t * header;
     osl_socket remote_sock;
+    chttpserver_transfer_t * transfer;
 } chttpserver_request_t;
 
 #ifdef __cplusplus
@@ -14,7 +16,7 @@ extern "C" {
 #endif
 
     extern OSL_EXPORT chttpserver_request_t * chttpserver_request_new();
-    extern OSL_EXPORT void chttpserver_request_init(chttpserver_request_t *, chttpserver_header_t *, osl_socket);
+    extern OSL_EXPORT chttpserver_request_t * chttpserver_request_init(chttpserver_request_t *, chttpserver_header_t *, osl_socket);
     extern OSL_EXPORT void chttpserver_request_free(chttpserver_request_t *);
 
     extern OSL_EXPORT const char * chttpserver_request_get_method(chttpserver_request_t *);

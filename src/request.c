@@ -12,10 +12,11 @@ chttpserver_request_t * chttpserver_request_new()
     return req;
 }
 
-void chttpserver_request_init(chttpserver_request_t * req, chttpserver_header_t * header, osl_socket remote_sock)
+chttpserver_request_t * chttpserver_request_init(chttpserver_request_t * req, chttpserver_header_t * header, osl_socket remote_sock)
 {
     req->header = header;
     req->remote_sock = remote_sock;
+    return req;
 }
 
 void chttpserver_request_free(chttpserver_request_t * req)

@@ -27,13 +27,13 @@ typedef struct _chttpserver_server_t {
 extern "C" {
 #endif
 
-    extern OSL_EXPORT chttpserver_header_t * chttpserver_read_header(osl_socket sock);
-
-    extern OSL_EXPORT chttpserver_server_t * chttpserver_new(const char * host, int port);
-    extern OSL_EXPORT osl_bool chttpserver_start(chttpserver_server_t * server);
-    extern OSL_EXPORT osl_bool chttpserver_start_async(chttpserver_server_t * server);
-    extern OSL_EXPORT void chttpserver_stop(chttpserver_server_t * server);
-    extern OSL_EXPORT void chttpserver_free(chttpserver_server_t * server);
+    extern OSL_EXPORT chttpserver_header_t * chttpserver_read_header(osl_socket);
+    extern OSL_EXPORT chttpserver_server_t * chttpserver_new(void);
+    extern OSL_EXPORT chttpserver_server_t * chttpserver_init(chttpserver_server_t *, const char *, int);
+    extern OSL_EXPORT osl_bool chttpserver_start(chttpserver_server_t *);
+    extern OSL_EXPORT osl_bool chttpserver_start_async(chttpserver_server_t *);
+    extern OSL_EXPORT void chttpserver_stop(chttpserver_server_t *);
+    extern OSL_EXPORT void chttpserver_free(chttpserver_server_t *);
 
 #ifdef __cplusplus
 }

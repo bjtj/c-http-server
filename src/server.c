@@ -9,7 +9,7 @@
 static chttpserver_header_t * _read_header(chttpserver_server_t * server, osl_socket sock)
 {
     chttpserver_header_t * header = NULL;
-    osl_string_buffer_t * sb = osl_string_buffer_new();
+    osl_string_buffer_t * sb = osl_string_buffer_init(osl_string_buffer_new());
     char ch;
     int len;
 
@@ -35,22 +35,22 @@ chttpserver_header_t * chttpserver_read_header(osl_socket sock)
     return _read_header(NULL, sock);
 }
 
-static void _route(chttpserver_request_t * req)
+static chttpserver_response_t * _route(chttpserver_request_t * req)
 {
+    chttpserver_header_t * header = chttpserver_header_init(chttpserver_header_new(), NULL);
+    chttpserver_response_t * res = chttpserver_response_init(chttpserver_response_new(), header, req->remote_sock);
+    
     const char * uri = chttpserver_request_get_uri(req);
+    /* TODO: response init - new header */
+    
     if (osl_string_equals(uri, "/")) {
-	const char * data = "HTTP/1.1 200 OK\r\n"
-	    "Content-Length: 5\r\n"
-	    "Content-Type: text/plain\r\n"
-	    "\r\nhello";
-	osl_socket_send(req->remote_sock, data, strlen(data), 0);
+	chttpserver_response_set_status(res, 200);
+	chttpserver_response_set_content(res, "text/plain", "Hello");
     } else {
-	const char * data = "HTTP/1.1 404 Not Found\r\n"
-	    "Content-Length: 9\r\n"
-	    "Content-Type: text/plain\r\n"
-	    "\r\nnot found";
-	osl_socket_send(req->remote_sock, data, strlen(data), 0);
+	chttpserver_response_set_status(res, 404);
+	chttpserver_response_set_content(res, "text/plain", "Not Found");
     }
+    return res;
 }
 
 static void _on_connect(chttpserver_server_t * server, osl_socket client)
@@ -62,11 +62,20 @@ static void _on_connect(chttpserver_server_t * server, osl_socket client)
     /* handling keep connect */
 
     chttpserver_header_t * header = _read_header(server, client);
-    
     if (header) {
-	chttpserver_request_t * req = chttpserver_request_new();
-	chttpserver_request_init(req, header, client);
-	_route(req);
+	chttpserver_response_t * res;
+	chttpserver_request_t * req = chttpserver_request_init(chttpserver_request_new(), header, client);
+	res = _route(req);
+	if (res) {
+	    char * header_str = chttpserver_header_to_str(res->header);
+	    osl_socket_send(req->remote_sock, header_str, strlen(header_str), 0);
+	    if (res->content) {
+		char * content = res->content;
+		osl_socket_send(req->remote_sock, content, strlen(content), 0);
+	    }
+	    osl_safe_free(header_str);
+	    chttpserver_response_free(res);
+	}
 	chttpserver_request_free(req);
     }
 
@@ -90,7 +99,7 @@ static osl_bool _bind(chttpserver_server_t * server, const char * host, int port
 {
     int backlog = 5;
     osl_inet_address_t * addr;
-    if ((addr = osl_inet_address_new(osl_inet_unspec, host, port)) == NULL) {
+    if ((addr = osl_inet_address_init(osl_inet_address_new(), osl_inet_unspec, host, port)) == NULL) {
 	/* TODO: exception */
 	fprintf(stderr, "osl_inet_address_new() failed\n");
 	return osl_false;
@@ -178,13 +187,17 @@ static osl_bool _start_server(chttpserver_server_t * server)
     return osl_true;
 }
 
-chttpserver_server_t * chttpserver_new(const char * host, int port)
+chttpserver_server_t * chttpserver_new(void)
 {
     chttpserver_server_t * server = (chttpserver_server_t*)malloc(sizeof(chttpserver_server_t));
     if (server == NULL) {
 	return NULL;
     }
-    memset(server, 0, sizeof(chttpserver_server_t));
+    return server;
+}
+
+chttpserver_server_t * chttpserver_init(chttpserver_server_t * server, const char * host, int port)
+{
     server->sock = OSL_INVALID_SOCKET;
     server->host = osl_safe_strdup(host);
     server->port = port;
@@ -210,7 +223,7 @@ osl_bool chttpserver_start_async(chttpserver_server_t * server) {
 	return osl_false;
     }
 
-    server->thread = osl_thread_new(_runner, (void*)server);
+    server->thread = osl_thread_init(osl_thread_new(), _runner, (void*)server);
     osl_thread_start(server->thread);
     
     return osl_true;

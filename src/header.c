@@ -15,6 +15,17 @@ chttpserver_header_t * chttpserver_header_new(void)
     return header;
 }
 
+chttpserver_header_t * chttpserver_header_init(chttpserver_header_t * header, chttpserver_header_firstline_t * firstline)
+{
+    if (firstline == NULL) {
+	header->firstline = chttpserver_header_firstline_init(chttpserver_header_firstline_new());
+    } else {
+	header->firstline = firstline;
+    }
+    
+    return header;
+}
+
 void chttpserver_header_free(chttpserver_header_t * header)
 {
     if (header == NULL) {
@@ -46,7 +57,7 @@ void chttpserver_header_set_field_value(chttpserver_header_t * header, const cha
 {
     chttpserver_header_field_t * field = chttpserver_header_get_field(header, name);
     if (field == NULL) {
-	header->fields = osl_list_append(header->fields, chttpserver_header_field_new_with_name_value(name, value));
+	header->fields = osl_list_append(header->fields, chttpserver_header_field_init_with_name_value(chttpserver_header_field_new(), name, value));
     } else {
 	osl_list_free(field->values, (osl_free_cb)chttpserver_header_field_free);
 	field->values = osl_list_append(field->values, osl_strdup(value));
@@ -57,7 +68,7 @@ void chttpserver_header_set_field_values(chttpserver_header_t * header, const ch
 {
     chttpserver_header_field_t * field = chttpserver_header_get_field(header, name);
     if (field == NULL) {
-	header->fields = osl_list_append(header->fields, chttpserver_header_field_new_with_name_values(name, values));
+	header->fields = osl_list_append(header->fields, chttpserver_header_field_init_with_name_values(chttpserver_header_field_new(), name, values));
     } else {
 	osl_list_free(field->values, (osl_free_cb)chttpserver_header_field_free);
 	field->values = values;
@@ -72,13 +83,17 @@ void chttpserver_header_remove_field(chttpserver_header_t * header, const char *
     
 chttpserver_header_firstline_t * chttpserver_header_firstline_new(void)
 {
-    chttpserver_header_firstline_t * request_line = malloc(sizeof(chttpserver_header_firstline_t));
-    if (request_line == NULL) {
-	perror("Allocating request line");
+    chttpserver_header_firstline_t * firstline = malloc(sizeof(chttpserver_header_firstline_t));
+    if (firstline == NULL) {
 	return NULL;
     }
-    memset(request_line, 0, sizeof(chttpserver_header_firstline_t));
-    return request_line;
+    memset(firstline, 0, sizeof(chttpserver_header_firstline_t));
+    return firstline;
+}
+
+chttpserver_header_firstline_t * chttpserver_header_firstline_init(chttpserver_header_firstline_t * firstline)
+{
+    return firstline;
 }
 
 void chttpserver_header_firstline_free(chttpserver_header_firstline_t * firstline)
@@ -91,6 +106,19 @@ void chttpserver_header_firstline_free(chttpserver_header_firstline_t * firstlin
     osl_safe_free(firstline->part2);
     osl_safe_free(firstline->part3);
     osl_safe_free(firstline);
+}
+
+osl_bool chttpserver_header_firstline_is_empty(chttpserver_header_firstline_t * firstline)
+{
+    if (firstline == NULL) {
+	return osl_true;
+    }
+
+    if (firstline->part1 == NULL && firstline->part2 == NULL && firstline->part3 == NULL) {
+	return osl_true;
+    }
+
+    return osl_false;
 }
 
 void chttpserver_header_firstline_set_part1(chttpserver_header_firstline_t * firstline, const char * part1)
@@ -124,23 +152,20 @@ chttpserver_header_field_t * chttpserver_header_field_new(void)
     return field;
 }
 
-chttpserver_header_field_t * chttpserver_header_field_new_with_name_value(const char * name, const char * value)
+chttpserver_header_field_t * chttpserver_header_field_init(chttpserver_header_field_t * field)
 {
-    chttpserver_header_field_t * field = chttpserver_header_field_new();
-    if (field == NULL) {
-	return NULL;
-    }
+    return field;
+}
+
+chttpserver_header_field_t * chttpserver_header_field_init_with_name_value(chttpserver_header_field_t * field, const char * name, const char * value)
+{
     field->name = osl_strdup(name);
     field->values = osl_list_append(field->values, osl_strdup(value));
     return field;
 }
 
-chttpserver_header_field_t * chttpserver_header_field_new_with_name_values(const char * name, osl_list_t * values)
+chttpserver_header_field_t * chttpserver_header_field_init_with_name_values(chttpserver_header_field_t * field, const char * name, osl_list_t * values)
 {
-    chttpserver_header_field_t * field = chttpserver_header_field_new();
-    if (field == NULL) {
-	return NULL;
-    }
     field->name = osl_strdup(name);
     field->values = values;
     return field;
@@ -163,9 +188,10 @@ osl_bool chttpserver_header_field_compare_name(chttpserver_header_field_t * fiel
 
 chttpserver_header_t * chttpserver_header_from_str(const char * header_string)
 {
-    chttpserver_header_t * header = chttpserver_header_new();
-    header->firstline = chttpserver_header_firstline_from_str(header_string);
-    const char * fields_string = osl_string_find(header_string, "\r\n") + 2;
+    const char * fields_string;
+    chttpserver_header_t * header;
+    header = chttpserver_header_init(chttpserver_header_new(), chttpserver_header_firstline_from_str(header_string));
+    fields_string = osl_string_find(header_string, "\r\n") + 2;
     header->fields = chttpserver_header_fields_from_str(fields_string);
     return header;
 }
@@ -175,7 +201,7 @@ chttpserver_header_firstline_t * chttpserver_header_firstline_from_str(const cha
     chttpserver_header_firstline_t * firstline = NULL;
     const char * space = NULL;
     const char * token = NULL;
-    firstline = chttpserver_header_firstline_new();
+    firstline = chttpserver_header_firstline_init(chttpserver_header_firstline_new());
     if (firstline == NULL) {
 	/* TODO: exception */
 	return NULL;
@@ -232,9 +258,40 @@ chttpserver_header_field_t * chttpserver_header_field_from_str(const char * line
 	name = osl_strndup(line, delimeter - line);
 	value = osl_strndup(delimeter + 1, end - delimeter - 1);
     }
-    result = chttpserver_header_field_new_with_name_value(name, value);
+    result = chttpserver_header_field_init_with_name_value(chttpserver_header_field_new(), name, value);
     osl_safe_free(name);
     osl_safe_free(value);
     return result;
 }
 
+char * chttpserver_header_to_str(chttpserver_header_t * header)
+{
+    char firstline[256] = {0,};
+    char fieldline[256] = {0,};
+    osl_string_buffer_t * sb;
+
+    if (header == NULL) {
+	return NULL;
+    }
+
+    if (chttpserver_header_firstline_is_empty(header->firstline)) {
+	return NULL;
+    }
+    
+    sb = osl_string_buffer_init(osl_string_buffer_new());
+
+    snprintf(firstline, sizeof(firstline), "%s %s %s\r\n", header->firstline->part1, header->firstline->part2, header->firstline->part3);
+    osl_string_buffer_append(sb, firstline);
+
+    osl_list_t * ptr = header->fields;
+    for (; ptr; ptr = ptr->next) {
+	chttpserver_header_field_t * field = (chttpserver_header_field_t *)ptr->data;
+	osl_list_t * value_ptr = field->values;
+	for (; value_ptr; value_ptr = value_ptr->next) {
+	    snprintf(fieldline, sizeof(fieldline), "%s: %s\r\n", field->name, (char*)value_ptr->data);
+	    osl_string_buffer_append(sb, fieldline);
+	}
+    }
+    osl_string_buffer_append(sb, "\r\n");
+    return osl_string_buffer_to_str_and_free(sb);
+}

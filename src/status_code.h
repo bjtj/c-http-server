@@ -51,7 +51,7 @@ typedef enum _CHTTPSERVER_STATUS_CODE {
 extern "C" {
 #endif
 
-    extern const char * chttpserver_status_code_message(int code);
+    extern const char * chttpserver_status_get_message(int code);
 
 #ifdef __cplusplus
 }
