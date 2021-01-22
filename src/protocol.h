@@ -4,6 +4,7 @@
 #include <osl/osl.h>
 
 typedef enum _chttpserver_protocol_version_e {
+    CHTTPSERVER_HTTP_UNKNOWN,
     CHTTPSERVER_HTTP_1_0,
     CHTTPSERVER_HTTP_1_1,
 } chttpserver_protocol_version_e;

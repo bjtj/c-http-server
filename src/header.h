@@ -3,6 +3,13 @@
 
 #include <osl/osl.h>
 #include <osl/list.h>
+#include "protocol.h"
+
+
+typedef enum _chttpserver_header_type_e {
+    CHTTPSERVER_REQUEST_HEADER,
+    CHTTPSERVER_RESPONSE_HEADER,
+} chttpserver_header_type_e;
 
 typedef struct _chttpserver_header_firstline_t {
     char * line;
@@ -27,7 +34,8 @@ extern "C" {
 #endif
 
     extern OSL_EXPORT chttpserver_header_t * chttpserver_header_new(void);
-    extern OSL_EXPORT chttpserver_header_t * chttpserver_header_init(chttpserver_header_t *, chttpserver_header_firstline_t *);
+    extern OSL_EXPORT chttpserver_header_t * chttpserver_header_init(chttpserver_header_t *, chttpserver_header_type_e, chttpserver_protocol_version_e);
+    extern OSL_EXPORT chttpserver_header_t * chttpserver_header_init_with_firstline(chttpserver_header_t *, chttpserver_header_firstline_t *);
     extern OSL_EXPORT void chttpserver_header_free(chttpserver_header_t *);
     extern OSL_EXPORT chttpserver_header_field_t * chttpserver_header_get_field(chttpserver_header_t *, const char *);
     extern OSL_EXPORT char * chttpserver_header_get_field_value(chttpserver_header_t *, const char *);
@@ -37,7 +45,7 @@ extern "C" {
     extern OSL_EXPORT void chttpserver_header_remove_field(chttpserver_header_t *, const char *);
     
     extern OSL_EXPORT chttpserver_header_firstline_t * chttpserver_header_firstline_new(void);
-    extern OSL_EXPORT chttpserver_header_firstline_t * chttpserver_header_firstline_init(chttpserver_header_firstline_t *);
+    extern OSL_EXPORT chttpserver_header_firstline_t * chttpserver_header_firstline_init(chttpserver_header_firstline_t *, chttpserver_header_type_e, chttpserver_protocol_version_e);
     extern OSL_EXPORT void chttpserver_header_firstline_free(chttpserver_header_firstline_t *);
     extern OSL_EXPORT osl_bool chttpserver_header_firstline_is_empty(chttpserver_header_firstline_t *);
     extern OSL_EXPORT void chttpserver_header_firstline_set_part1(chttpserver_header_firstline_t *, const char *);

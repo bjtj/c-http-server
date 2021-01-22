@@ -8,7 +8,7 @@ chttpserver_server_t * server;
 
 void start_server()
 {
-    server = chttpserver_init(chttpserver_new(), "127.0.0.1", 0);
+    server = chttpserver_init(chttpserver_new(), "127.0.0.1", 0, 10);
     assert(server != NULL);
     assert(chttpserver_start_async(server) == osl_true);
     assert(osl_socket_is_valid(server->sock));
@@ -35,8 +35,9 @@ void request(const char * header, const char * body)
     }
     response_header = chttpserver_read_header(sock);
     assert(response_header != NULL);
+    assert(strcmp(response_header->firstline->part1, "HTTP/1.1") == 0);
 
-    res = chttpserver_response_init(chttpserver_response_new(), response_header, sock);
+    res = chttpserver_response_init_with_header(chttpserver_response_new(), sock, response_header);
     assert(chttpserver_response_get_status_code(res) == 200);
     chttpserver_response_free(res);
     osl_inet_address_free(addr);
@@ -46,6 +47,8 @@ void request(const char * header, const char * body)
 
 int main()
 {
+    osl_init_once();
+    osl_ignore_sigpipe();
     start_server();
 
     {
@@ -55,6 +58,6 @@ int main()
     }
 
     stop_server();
-    
+    osl_finish();
     return 0;
 }

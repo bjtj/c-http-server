@@ -14,7 +14,14 @@ chttpserver_response_t * chttpserver_response_new()
     return res;
 }
 
-chttpserver_response_t * chttpserver_response_init(chttpserver_response_t * res, chttpserver_header_t * header, osl_socket remote_sock)
+chttpserver_response_t * chttpserver_response_init(chttpserver_response_t * res, osl_socket remote_sock, chttpserver_protocol_version_e protocol)
+{
+    res->header = chttpserver_header_init(chttpserver_header_new(), CHTTPSERVER_RESPONSE_HEADER, protocol);
+    res->remote_sock = remote_sock;
+    return res;
+}
+
+chttpserver_response_t * chttpserver_response_init_with_header(chttpserver_response_t * res, osl_socket remote_sock, chttpserver_header_t * header)
 {
     res->header = header;
     res->remote_sock = remote_sock;
@@ -32,6 +39,11 @@ void chttpserver_response_free(chttpserver_response_t * res)
 const char * chttpserver_response_get_protocol(chttpserver_response_t * res)
 {
     return res->header->firstline->part1;
+}
+
+chttpserver_protocol_version_e chttpserver_response_get_protocol_version(chttpserver_response_t * res)
+{
+    return chttpserver_protocol_version_from_str(chttpserver_response_get_protocol(res));
 }
 
 int chttpserver_response_get_status_code(chttpserver_response_t * res)

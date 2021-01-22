@@ -16,12 +16,15 @@ extern "C" {
 #endif
 
     extern OSL_EXPORT chttpserver_request_t * chttpserver_request_new();
-    extern OSL_EXPORT chttpserver_request_t * chttpserver_request_init(chttpserver_request_t *, chttpserver_header_t *, osl_socket);
+    extern OSL_EXPORT chttpserver_request_t * chttpserver_request_init(chttpserver_request_t *, osl_socket, chttpserver_protocol_version_e);
+    extern OSL_EXPORT chttpserver_request_t * chttpserver_request_init_with_header(chttpserver_request_t *, osl_socket, chttpserver_header_t *);
+    
     extern OSL_EXPORT void chttpserver_request_free(chttpserver_request_t *);
 
     extern OSL_EXPORT const char * chttpserver_request_get_method(chttpserver_request_t *);
     extern OSL_EXPORT const char * chttpserver_request_get_uri(chttpserver_request_t *);
     extern OSL_EXPORT const char * chttpserver_request_get_protocol(chttpserver_request_t *);
+    extern OSL_EXPORT chttpserver_protocol_version_e chttpserver_request_get_protocol_version(chttpserver_request_t *);
     
 
 #ifdef __cplusplus

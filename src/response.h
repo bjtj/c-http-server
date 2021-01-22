@@ -18,10 +18,12 @@ extern "C" {
 #endif
 
     extern OSL_EXPORT chttpserver_response_t * chttpserver_response_new();
-    extern OSL_EXPORT chttpserver_response_t * chttpserver_response_init(chttpserver_response_t *, chttpserver_header_t *, osl_socket);
+    extern OSL_EXPORT chttpserver_response_t * chttpserver_response_init(chttpserver_response_t *, osl_socket, chttpserver_protocol_version_e);
+    extern OSL_EXPORT chttpserver_response_t * chttpserver_response_init_with_header(chttpserver_response_t *, osl_socket, chttpserver_header_t *);
     extern OSL_EXPORT void chttpserver_response_free(chttpserver_response_t *);
 
     extern OSL_EXPORT const char * chttpserver_response_get_protocol(chttpserver_response_t *);
+    extern OSL_EXPORT chttpserver_protocol_version_e chttpserver_response_get_protocol_version(chttpserver_response_t *);
     extern OSL_EXPORT int chttpserver_response_get_status_code(chttpserver_response_t *);
     extern OSL_EXPORT const char * chttpserver_response_get_status_message(chttpserver_response_t *);
 

@@ -12,7 +12,14 @@ chttpserver_request_t * chttpserver_request_new()
     return req;
 }
 
-chttpserver_request_t * chttpserver_request_init(chttpserver_request_t * req, chttpserver_header_t * header, osl_socket remote_sock)
+chttpserver_request_t * chttpserver_request_init(chttpserver_request_t * req, osl_socket remote_sock, chttpserver_protocol_version_e protocol)
+{
+    req->header = chttpserver_header_init(chttpserver_header_new(), CHTTPSERVER_REQUEST_HEADER, protocol);;
+    req->remote_sock = remote_sock;
+    return req;
+}
+
+chttpserver_request_t * chttpserver_request_init_with_header(chttpserver_request_t * req, osl_socket remote_sock, chttpserver_header_t * header)
 {
     req->header = header;
     req->remote_sock = remote_sock;
@@ -38,4 +45,10 @@ const char * chttpserver_request_get_uri(chttpserver_request_t * req)
 const char * chttpserver_request_get_protocol(chttpserver_request_t * req)
 {
     return req->header->firstline->part3;
+}
+
+
+chttpserver_protocol_version_e chttpserver_request_get_protocol_version(chttpserver_request_t * req)
+{
+    return chttpserver_protocol_version_from_str(chttpserver_request_get_protocol(req));
 }

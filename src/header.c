@@ -15,13 +15,15 @@ chttpserver_header_t * chttpserver_header_new(void)
     return header;
 }
 
-chttpserver_header_t * chttpserver_header_init(chttpserver_header_t * header, chttpserver_header_firstline_t * firstline)
+chttpserver_header_t * chttpserver_header_init(chttpserver_header_t * header, chttpserver_header_type_e type, chttpserver_protocol_version_e protocol)
 {
-    if (firstline == NULL) {
-	header->firstline = chttpserver_header_firstline_init(chttpserver_header_firstline_new());
-    } else {
-	header->firstline = firstline;
-    }
+    header->firstline = chttpserver_header_firstline_init(chttpserver_header_firstline_new(), type, protocol);
+    return header;
+}
+
+chttpserver_header_t * chttpserver_header_init_with_firstline(chttpserver_header_t * header, chttpserver_header_firstline_t * firstline)
+{
+    header->firstline = firstline;
     
     return header;
 }
@@ -91,8 +93,22 @@ chttpserver_header_firstline_t * chttpserver_header_firstline_new(void)
     return firstline;
 }
 
-chttpserver_header_firstline_t * chttpserver_header_firstline_init(chttpserver_header_firstline_t * firstline)
+chttpserver_header_firstline_t * chttpserver_header_firstline_init(chttpserver_header_firstline_t * firstline, chttpserver_header_type_e type, chttpserver_protocol_version_e protocol)
 {
+    switch (type) {
+    case CHTTPSERVER_REQUEST_HEADER: {
+	chttpserver_header_firstline_set_part3(firstline, chttpserver_protocol_version_to_str(protocol));
+	break;
+    }
+    case CHTTPSERVER_RESPONSE_HEADER: {
+	chttpserver_header_firstline_set_part1(firstline, chttpserver_protocol_version_to_str(protocol));
+	break;
+    }
+    default:
+	/* TODO:  */
+	break;
+    }
+    
     return firstline;
 }
 
@@ -190,7 +206,7 @@ chttpserver_header_t * chttpserver_header_from_str(const char * header_string)
 {
     const char * fields_string;
     chttpserver_header_t * header;
-    header = chttpserver_header_init(chttpserver_header_new(), chttpserver_header_firstline_from_str(header_string));
+    header = chttpserver_header_init_with_firstline(chttpserver_header_new(), chttpserver_header_firstline_from_str(header_string));
     fields_string = osl_string_find(header_string, "\r\n") + 2;
     header->fields = chttpserver_header_fields_from_str(fields_string);
     return header;
@@ -201,7 +217,7 @@ chttpserver_header_firstline_t * chttpserver_header_firstline_from_str(const cha
     chttpserver_header_firstline_t * firstline = NULL;
     const char * space = NULL;
     const char * token = NULL;
-    firstline = chttpserver_header_firstline_init(chttpserver_header_firstline_new());
+    firstline = chttpserver_header_firstline_new();
     if (firstline == NULL) {
 	/* TODO: exception */
 	return NULL;
