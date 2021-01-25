@@ -8,12 +8,14 @@
 #include <osl/thread_pool.h>
 #include <osl/selector.h>
 #include "header.h"
+#include "connection.h"
+#include "router.h"
+
 
 struct _chttpserver_server_t;
-struct _chttpserver_connection_t;
 
-typedef void (*chttpserver_server_on_connect_cb)(struct _chttpserver_connection_t *);
-typedef void (*chttpserver_server_on_close_cb)(struct _chttpserver_connection_t *);
+typedef void (*chttpserver_server_on_connect_cb)(struct _chttpserver_server_t *, chttpserver_connection_t *);
+typedef void (*chttpserver_server_on_close_cb)(struct _chttpserver_server_t *, chttpserver_connection_t *);
 
 typedef struct _chttpserver_server_t {
     osl_bool done;
@@ -26,13 +28,14 @@ typedef struct _chttpserver_server_t {
     osl_list_t * client_list;
     osl_thread_pool_t * pool;
     osl_selector_t * selector;
+    chttpserver_router_t * router;
 } chttpserver_server_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    extern OSL_EXPORT chttpserver_header_t * chttpserver_read_header(osl_socket);
+    extern OSL_EXPORT chttpserver_header_t * chttpserver_read_header(chttpserver_server_t *, chttpserver_connection_t *);
     extern OSL_EXPORT chttpserver_server_t * chttpserver_new(void);
     extern OSL_EXPORT chttpserver_server_t * chttpserver_init(chttpserver_server_t *, const char *, int, int);
     extern OSL_EXPORT osl_bool chttpserver_start(chttpserver_server_t *);

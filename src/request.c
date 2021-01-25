@@ -12,17 +12,17 @@ chttpserver_request_t * chttpserver_request_new()
     return req;
 }
 
-chttpserver_request_t * chttpserver_request_init(chttpserver_request_t * req, osl_socket remote_sock, chttpserver_protocol_version_e protocol)
+chttpserver_request_t * chttpserver_request_init(chttpserver_request_t * req, chttpserver_connection_t * connection, chttpserver_protocol_version_e protocol)
 {
     req->header = chttpserver_header_init(chttpserver_header_new(), CHTTPSERVER_REQUEST_HEADER, protocol);;
-    req->remote_sock = remote_sock;
+    req->connection = connection;
     return req;
 }
 
-chttpserver_request_t * chttpserver_request_init_with_header(chttpserver_request_t * req, osl_socket remote_sock, chttpserver_header_t * header)
+chttpserver_request_t * chttpserver_request_init_with_header(chttpserver_request_t * req, chttpserver_connection_t * connection, chttpserver_header_t * header)
 {
     req->header = header;
-    req->remote_sock = remote_sock;
+    req->connection = connection;
     return req;
 }
 

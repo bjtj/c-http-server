@@ -5,128 +5,122 @@
 #include "header.h"
 #include "request.h"
 #include "response.h"
+#include "connection.h"
+#include "router.h"
 
 
-typedef struct _chttpserver_connection_t
-{
+struct _on_connect_param_t {
     chttpserver_server_t * server;
-    osl_socket remote_sock;
-} chttpserver_connection_t;
-
-chttpserver_connection_t * chttpserver_connection_new(void)
-{
-    chttpserver_connection_t * conn = (chttpserver_connection_t*)malloc(sizeof(chttpserver_connection_t));
-    if (conn == NULL) {
-	return NULL;
-    }
-    memset(conn, 0, sizeof(chttpserver_connection_t));
-    return conn;
-}
-	
-
-chttpserver_connection_t * chttpserver_connection_init(chttpserver_connection_t * conn, chttpserver_server_t * server, osl_socket remote_sock)
-{
-    conn->server = server;
-    conn->remote_sock = remote_sock;
-    return conn;
-}
-
-void chttpserver_connection_free(chttpserver_connection_t * conn)
-{
-    osl_safe_free(conn);
-}
+    chttpserver_connection_t * conn;
+};
 
 
-static chttpserver_header_t * _read_header(chttpserver_server_t * server, osl_socket sock)
+static chttpserver_header_t * _read_header(chttpserver_server_t * server, chttpserver_connection_t * conn)
 {
     chttpserver_header_t * header = NULL;
     osl_string_buffer_t * sb = osl_string_buffer_init(osl_string_buffer_new());
     char ch;
     int len;
 
-    (void)server;
-
-    while (1) {
-	len = osl_socket_recv(sock, &ch, 1, 0);
-	if (len == 0) {
+    while (!server->done) {
+	int count = chttpserver_connection_select(conn, 100);
+	if (count < 0) {
+	    /* TODO: error */
 	    break;
 	}
-	osl_string_buffer_append_buffer(sb, &ch, 1);
-	if (sb->len > 4 && osl_strcmp(sb->ptr + sb->len - 4, "\r\n\r\n") == 0) {
-	    header = chttpserver_header_from_str(sb->ptr);
-	    break;
+	
+	if (count == 0) {
+	    continue;
+	}
+
+	if (chttpserver_connection_is_readable(conn)) {
+	    len = chttpserver_connection_recv(conn, &ch, 1);
+	    if (len == 0) {
+		break;
+	    }
+	    osl_string_buffer_append_buffer(sb, &ch, 1);
+	    if (sb->len > 4 && osl_strcmp(sb->ptr + sb->len - 4, "\r\n\r\n") == 0) {
+		header = chttpserver_header_from_str(sb->ptr);
+		break;
+	    }
 	}
     }
     osl_string_buffer_free(sb);
     return header;
 }
 
-chttpserver_header_t * chttpserver_read_header(osl_socket sock)
+chttpserver_header_t * chttpserver_read_header(chttpserver_server_t * server, chttpserver_connection_t * conn)
 {
-    return _read_header(NULL, sock);
+    return _read_header(server, conn);
 }
 
-static chttpserver_response_t * _route(chttpserver_request_t * req)
+static void _notfound(chttpserver_server_t * server, chttpserver_request_t * req, chttpserver_response_t * res)
 {
-    chttpserver_response_t * res = chttpserver_response_init(chttpserver_response_new(), req->remote_sock, chttpserver_request_get_protocol_version(req));
-    
-    const char * uri = chttpserver_request_get_uri(req);
-    /* TODO: response init - new header */
-    
-    if (osl_string_equals(uri, "/")) {
-	chttpserver_response_set_status(res, 200);
-	chttpserver_response_set_content(res, "text/plain", "Hello");
-    } else {
-	chttpserver_response_set_status(res, 404);
-	chttpserver_response_set_content(res, "text/plain", "Not Found");
+    (void)server;
+    (void)req;
+    chttpserver_response_set_status(res, 404);
+    chttpserver_response_set_content(res, "text/plain", "Not Found");
+}
+
+static struct _on_connect_param_t * _make_handler_param(chttpserver_server_t * server, chttpserver_connection_t * conn)
+{
+    OSL_NEW(struct _on_connect_param_t, param);
+    param->server = server;
+    param->conn = conn;
+    return param;
+}
+
+static void _on_connect_wrapper(struct _on_connect_param_t * param)
+{
+    if (param->server->on_connect) {
+	param->server->on_connect(param->server, param->conn);
     }
-    return res;
+    osl_safe_free(param);
 }
 
-static void _on_connect(chttpserver_connection_t * conn)
+static void _on_connect(chttpserver_server_t * server, chttpserver_connection_t * conn)
 {
     chttpserver_header_t * header;
-    chttpserver_server_t * server = conn->server;
-    osl_socket client = conn->remote_sock;
 	
-    /* read request header */
-    /* route request */
-    /* response header */
-    /* response body */
-    /* handling keep connect */
+    /* TODO: handling keep connect */
 
-    header = _read_header(server, client);
+    header = _read_header(server, conn);
     
     if (header) {
-	chttpserver_response_t * res;
-	chttpserver_request_t * req = chttpserver_request_init_with_header(chttpserver_request_new(), client, header);
-	res = _route(req);
-	if (res) {
-	    char * header_str = chttpserver_header_to_str(res->header);
-	    osl_socket_send(req->remote_sock, header_str, strlen(header_str), 0);
-	    if (res->content) {
-		char * content = res->content;
-		osl_socket_send(req->remote_sock, content, strlen(content), 0);
-	    }
-	    osl_safe_free(header_str);
-	    chttpserver_response_free(res);
+	chttpserver_request_t * req = chttpserver_request_init_with_header(chttpserver_request_new(), conn, header);
+	chttpserver_response_t * res = chttpserver_response_init(chttpserver_response_new(), req->connection, chttpserver_request_get_protocol_version(req));
+	chttpserver_route_handler_cb handler = chttpserver_router_get_handler(server->router, chttpserver_request_get_uri(req));
+
+	if (handler == NULL) {
+	    _notfound(server, req, res);
+	} else {
+	    handler(server, req, res);
 	}
+
+	char * header_str = chttpserver_header_to_str(res->header);
+	chttpserver_connection_send(res->connection, header_str, strlen(header_str));
+	if (res->content) {
+	    chttpserver_connection_send(res->connection, res->content, strlen(res->content));
+	}
+
+	osl_safe_free(header_str);
 	chttpserver_request_free(req);
+	chttpserver_response_free(res);
     }
 
     if (server->on_close) {
-	server->on_close(conn);
+	server->on_close(server, conn);
     }
-    
-    osl_socket_close(client);
 
+    chttpserver_connection_close(conn);
     chttpserver_connection_free(conn);
 }
 
 
-static void _on_close(chttpserver_connection_t * conn)
+static void _on_close(chttpserver_server_t * server, chttpserver_connection_t * conn)
 {
     /*  */
+    (void)server;
     (void)conn;
 }
 
@@ -181,8 +175,9 @@ static osl_bool _poll(chttpserver_server_t * server)
 	return osl_false;
     }
     if (server->on_connect) {
-	chttpserver_connection_t * conn = chttpserver_connection_init(chttpserver_connection_new(), server, client);
-	osl_thread_pool_call(server->pool, (osl_thread_pool_func)server->on_connect, conn);
+	chttpserver_connection_t * conn = chttpserver_connection_init(chttpserver_connection_new(), client, OSL_FLAG_READ | OSL_FLAG_WRITE);
+	struct _on_connect_param_t * param =  _make_handler_param(server, conn);
+	osl_thread_pool_call(server->pool, (osl_thread_pool_func)_on_connect_wrapper, param);
     } else {
 	/* TODO: send dummy message before close */
 	osl_socket_close(client);
@@ -249,6 +244,8 @@ chttpserver_server_t * chttpserver_init(chttpserver_server_t * server, const cha
     server->on_close = _on_close;
     server->pool = osl_thread_pool_init(osl_thread_pool_new(), pool_size);
     server->selector = osl_selector_init(osl_selector_new());
+    server->router = chttpserver_router_init(chttpserver_router_new());
+    
     return server;
 }
 
@@ -298,6 +295,7 @@ void chttpserver_free(chttpserver_server_t * server)
 	return;
     }
     osl_thread_pool_free(server->pool);
+    chttpserver_router_free(server->router);
     osl_safe_free(server->host);
     osl_safe_free(server);
 }

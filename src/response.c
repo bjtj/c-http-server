@@ -14,17 +14,17 @@ chttpserver_response_t * chttpserver_response_new()
     return res;
 }
 
-chttpserver_response_t * chttpserver_response_init(chttpserver_response_t * res, osl_socket remote_sock, chttpserver_protocol_version_e protocol)
+chttpserver_response_t * chttpserver_response_init(chttpserver_response_t * res, chttpserver_connection_t * connection, chttpserver_protocol_version_e protocol)
 {
     res->header = chttpserver_header_init(chttpserver_header_new(), CHTTPSERVER_RESPONSE_HEADER, protocol);
-    res->remote_sock = remote_sock;
+    res->connection = connection;
     return res;
 }
 
-chttpserver_response_t * chttpserver_response_init_with_header(chttpserver_response_t * res, osl_socket remote_sock, chttpserver_header_t * header)
+chttpserver_response_t * chttpserver_response_init_with_header(chttpserver_response_t * res, chttpserver_connection_t * connection, chttpserver_header_t * header)
 {
     res->header = header;
-    res->remote_sock = remote_sock;
+    res->connection = connection;
     return res;
 }
 

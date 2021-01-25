@@ -5,10 +5,11 @@
 #include "header.h"
 #include "protocol.h"
 #include "transfer.h"
+#include "connection.h"
 
 typedef struct _chttpserver_response_t {
     chttpserver_header_t * header;
-    osl_socket remote_sock;
+    chttpserver_connection_t * connection;
     char * content;
     chttpserver_transfer_t * transfer;
 } chttpserver_response_t;
@@ -18,8 +19,8 @@ extern "C" {
 #endif
 
     extern OSL_EXPORT chttpserver_response_t * chttpserver_response_new();
-    extern OSL_EXPORT chttpserver_response_t * chttpserver_response_init(chttpserver_response_t *, osl_socket, chttpserver_protocol_version_e);
-    extern OSL_EXPORT chttpserver_response_t * chttpserver_response_init_with_header(chttpserver_response_t *, osl_socket, chttpserver_header_t *);
+    extern OSL_EXPORT chttpserver_response_t * chttpserver_response_init(chttpserver_response_t *, chttpserver_connection_t *, chttpserver_protocol_version_e);
+    extern OSL_EXPORT chttpserver_response_t * chttpserver_response_init_with_header(chttpserver_response_t *, chttpserver_connection_t *, chttpserver_header_t *);
     extern OSL_EXPORT void chttpserver_response_free(chttpserver_response_t *);
 
     extern OSL_EXPORT const char * chttpserver_response_get_protocol(chttpserver_response_t *);
