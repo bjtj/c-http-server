@@ -43,6 +43,9 @@ extern "C" {
     extern OSL_EXPORT void chttpserver_header_set_field_value(chttpserver_header_t *, const char *, const char *);
     extern OSL_EXPORT void chttpserver_header_set_field_values(chttpserver_header_t *, const char *, osl_list_t *);
     extern OSL_EXPORT void chttpserver_header_remove_field(chttpserver_header_t *, const char *);
+
+    extern OSL_EXPORT int chttpserver_header_get_content_length(chttpserver_header_t *);
+    extern OSL_EXPORT void chttpserver_header_set_content_length(chttpserver_header_t * header, int content_length);
     
     extern OSL_EXPORT chttpserver_header_firstline_t * chttpserver_header_firstline_new(void);
     extern OSL_EXPORT chttpserver_header_firstline_t * chttpserver_header_firstline_init(chttpserver_header_firstline_t *, chttpserver_header_type_e, chttpserver_protocol_version_e);

@@ -23,10 +23,20 @@ extern "C" {
     extern OSL_EXPORT void chttpserver_request_free(chttpserver_request_t *);
 
     extern OSL_EXPORT const char * chttpserver_request_get_method(chttpserver_request_t *);
+    extern OSL_EXPORT void chttpserver_request_set_method(chttpserver_request_t *, const char *);
     extern OSL_EXPORT const char * chttpserver_request_get_uri(chttpserver_request_t *);
+    extern OSL_EXPORT void chttpserver_request_set_uri(chttpserver_request_t *, const char *);
     extern OSL_EXPORT const char * chttpserver_request_get_protocol(chttpserver_request_t *);
+    extern OSL_EXPORT void chttpserver_request_set_protocol(chttpserver_request_t *, const char *);
     extern OSL_EXPORT chttpserver_protocol_version_e chttpserver_request_get_protocol_version(chttpserver_request_t *);
-    
+    extern OSL_EXPORT const char * chttpserver_request_get_transfer_value(chttpserver_request_t *);
+    extern OSL_EXPORT void chttpserver_request_set_transfer_value(chttpserver_request_t *, const char *);
+    extern OSL_EXPORT void chttpserver_request_set_transfer_type(chttpserver_request_t *, chttpserver_transfer_type_e);
+    extern OSL_EXPORT const char * chttpserver_request_get_connection_value(chttpserver_request_t *);
+    extern OSL_EXPORT void chttpserver_request_set_connection_value(chttpserver_request_t *, const char *);
+    extern OSL_EXPORT osl_bool chttpserver_request_is_chunked_transfer(chttpserver_request_t *);
+    extern OSL_EXPORT osl_bool chttpserver_request_is_keep_alive(chttpserver_request_t *);
+    extern OSL_EXPORT void chttpserver_request_set_keep_alive(chttpserver_request_t *, osl_bool);
 
 #ifdef __cplusplus
 }

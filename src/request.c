@@ -1,3 +1,4 @@
+#include <osl/str.h>
 #include "request.h"
 
 
@@ -37,9 +38,19 @@ const char * chttpserver_request_get_method(chttpserver_request_t * req)
     return req->header->firstline->part1;
 }
 
+void chttpserver_request_set_method(chttpserver_request_t * req, const char * method)
+{
+    chttpserver_header_firstline_set_part1(req->header->firstline, method);
+}
+
 const char * chttpserver_request_get_uri(chttpserver_request_t * req)
 {
     return req->header->firstline->part2;
+}
+
+void chttpserver_request_set_uri(chttpserver_request_t * req, const char * uri)
+{
+    chttpserver_header_firstline_set_part2(req->header->firstline, uri);
 }
 
 const char * chttpserver_request_get_protocol(chttpserver_request_t * req)
@@ -47,8 +58,64 @@ const char * chttpserver_request_get_protocol(chttpserver_request_t * req)
     return req->header->firstline->part3;
 }
 
+void chttpserver_request_set_protocol(chttpserver_request_t * req, const char * protocol)
+{
+    chttpserver_header_firstline_set_part3(req->header->firstline, protocol);
+}
 
 chttpserver_protocol_version_e chttpserver_request_get_protocol_version(chttpserver_request_t * req)
 {
     return chttpserver_protocol_version_from_str(chttpserver_request_get_protocol(req));
+}
+
+const char * chttpserver_request_get_transfer_value(chttpserver_request_t * req)
+{
+    return chttpserver_header_get_field_value(req->header, "Transfer-Encoding");
+}
+
+void chttpserver_request_set_transfer_value(chttpserver_request_t * req, const char * transfer)
+{
+    chttpserver_header_set_field_value(req->header, "Transfer-Encoding", transfer);
+}
+
+void chttpserver_request_set_transfer_type(chttpserver_request_t * req, chttpserver_transfer_type_e type)
+{
+    chttpserver_header_set_field_value(req->header, "Transfer-Encoding", chttpserver_transfer_type_to_str(type));
+}
+
+const char * chttpserver_request_get_connection_value(chttpserver_request_t * req)
+{
+    return chttpserver_header_get_field_value(req->header, "Connection");
+}
+
+void chttpserver_request_set_connection_value(chttpserver_request_t * req, const char * connection)
+{
+    if (connection == NULL) {
+	chttpserver_header_remove_field(req->header, "Connection");
+    } else {
+	chttpserver_header_set_field_value(req->header, "Connection", connection);
+    }
+}
+
+osl_bool chttpserver_request_is_chunked_transfer(chttpserver_request_t * req)
+{
+    const char * transfer = chttpserver_request_get_transfer_value(req);
+    if (transfer == NULL) {
+	return osl_false;
+    }
+    return osl_string_equals(transfer, "chunked");
+}
+
+osl_bool chttpserver_request_is_keep_alive(chttpserver_request_t * req)
+{
+    const char * connection = chttpserver_request_get_connection_value(req);
+    if (connection == NULL) {
+	return osl_false;
+    }
+    return osl_string_equals(connection, "keep-alive");
+}
+
+void chttpserver_request_set_keep_alive(chttpserver_request_t * req, osl_bool set)
+{
+    chttpserver_request_set_connection_value(req, set ? "keep-alive" : NULL);
 }

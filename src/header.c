@@ -82,6 +82,21 @@ void chttpserver_header_remove_field(chttpserver_header_t * header, const char *
     header->fields = osl_list_remove_if(header->fields, (osl_compare_cb)chttpserver_header_field_compare_name, (void*)name, (osl_free_cb)chttpserver_header_field_free);
 }
 
+int chttpserver_header_get_content_length(chttpserver_header_t * header)
+{
+    char * content_length = chttpserver_header_get_field_value(header, "Content-Length");
+    if (content_length == NULL) {
+	return 0;
+    }
+    return atoi(content_length);
+}
+
+void chttpserver_header_set_content_length(chttpserver_header_t * header, int content_length)
+{
+    char value[10] = {0,};
+    snprintf(value, sizeof(value), "%d", content_length);
+    chttpserver_header_set_field_value(header, "Content-Length", value);
+}
     
 chttpserver_header_firstline_t * chttpserver_header_firstline_new(void)
 {
@@ -165,11 +180,6 @@ chttpserver_header_field_t * chttpserver_header_field_new(void)
 	return NULL;
     }
     memset(field, 0, sizeof(chttpserver_header_field_t));
-    return field;
-}
-
-chttpserver_header_field_t * chttpserver_header_field_init(chttpserver_header_field_t * field)
-{
     return field;
 }
 
@@ -269,10 +279,22 @@ chttpserver_header_field_t * chttpserver_header_field_from_str(const char * line
 	end = osl_string_end_ptr(line);
     }
     if (delimeter == NULL) {
-	name = osl_strndup(line, end - line);
+	char * temp;
+	temp = osl_strndup(line, end - line);
+	name = osl_string_trim(temp);
+	osl_safe_free(temp);
+	printf("name: %s\n", name);
     } else {
-	name = osl_strndup(line, delimeter - line);
-	value = osl_strndup(delimeter + 1, end - delimeter - 1);
+	char * temp;
+	temp = osl_strndup(line, delimeter - line);
+	name = osl_string_trim(temp);
+	osl_safe_free(temp);
+	printf("name: %s\n", name);
+	
+	temp = osl_strndup(delimeter + 1, end - delimeter - 1);
+	value = osl_string_trim(temp);
+	osl_safe_free(temp);
+	printf("value: %s\n", value);
     }
     result = chttpserver_header_field_init_with_name_value(chttpserver_header_field_new(), name, value);
     osl_safe_free(name);

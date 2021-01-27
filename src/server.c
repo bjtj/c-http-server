@@ -26,6 +26,7 @@ static chttpserver_header_t * _read_header(chttpserver_server_t * server, chttps
 	int count = chttpserver_connection_select(conn, 100);
 	if (count < 0) {
 	    /* TODO: error */
+	    fprintf(stderr, "error\n");
 	    break;
 	}
 	
@@ -36,6 +37,7 @@ static chttpserver_header_t * _read_header(chttpserver_server_t * server, chttps
 	if (chttpserver_connection_is_readable(conn)) {
 	    len = chttpserver_connection_recv(conn, &ch, 1);
 	    if (len == 0) {
+		fprintf(stdout, "closed\n");
 		break;
 	    }
 	    osl_string_buffer_append_buffer(sb, &ch, 1);
@@ -78,35 +80,58 @@ static void _on_connect_wrapper(struct _on_connect_param_t * param)
     osl_safe_free(param);
 }
 
+static void _send_response(chttpserver_response_t * res)
+{
+    char * header_str = chttpserver_header_to_str(res->header);
+    chttpserver_connection_send(res->connection, header_str, strlen(header_str));
+    if (res->content) {
+	chttpserver_connection_send(res->connection, res->content, strlen(res->content));
+    }
+    osl_safe_free(header_str);
+}
+
+static void _handle_request_header(chttpserver_server_t * server, chttpserver_request_t * req, chttpserver_response_t * res)
+{
+    chttpserver_route_handler_cb handler = chttpserver_router_get_handler(server->router, chttpserver_request_get_uri(req));
+    if (handler == NULL) {
+	printf("NOT FOUND\n");
+	_notfound(server, req, res);
+    } else {
+	printf("HANDLE - '%s'\n", chttpserver_request_get_uri(req));
+	handler(server, req, res);
+    }
+
+    _send_response(res);
+}
+
 static void _on_connect(chttpserver_server_t * server, chttpserver_connection_t * conn)
 {
     chttpserver_header_t * header;
-	
-    /* TODO: handling keep connect */
-
-    header = _read_header(server, conn);
+    osl_bool keep_alive = osl_false;
     
-    if (header) {
-	chttpserver_request_t * req = chttpserver_request_init_with_header(chttpserver_request_new(), conn, header);
-	chttpserver_response_t * res = chttpserver_response_init(chttpserver_response_new(), req->connection, chttpserver_request_get_protocol_version(req));
-	chttpserver_route_handler_cb handler = chttpserver_router_get_handler(server->router, chttpserver_request_get_uri(req));
-
-	if (handler == NULL) {
-	    _notfound(server, req, res);
-	} else {
-	    handler(server, req, res);
+    do
+    {
+	chttpserver_request_t * req;
+	chttpserver_response_t * res;
+	
+	header = _read_header(server, conn);
+	if (header == NULL)
+	{
+	    break;
 	}
+	
+	req = chttpserver_request_init_with_header(chttpserver_request_new(), conn, header);
+	res = chttpserver_response_init(chttpserver_response_new(), req->connection, chttpserver_request_get_protocol_version(req));
+	
+	_handle_request_header(server, req, res);
 
-	char * header_str = chttpserver_header_to_str(res->header);
-	chttpserver_connection_send(res->connection, header_str, strlen(header_str));
-	if (res->content) {
-	    chttpserver_connection_send(res->connection, res->content, strlen(res->content));
-	}
+	keep_alive = chttpserver_request_is_keep_alive(req);
+	printf("keep alive: %s\n", keep_alive ? "Y" : "N");
 
-	osl_safe_free(header_str);
 	chttpserver_request_free(req);
 	chttpserver_response_free(res);
-    }
+	
+    } while (keep_alive && !server->done);
 
     if (server->on_close) {
 	server->on_close(server, conn);

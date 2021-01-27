@@ -64,7 +64,7 @@ osl_bool chttpserver_router_unregister(chttpserver_router_t * router, const char
 
 chttpserver_route_handler_cb chttpserver_router_get_handler(chttpserver_router_t * router, const char * pattern)
 {
-    osl_list_t * ret = osl_list_find(router->table, (osl_compare_cb)_compare_node_pattern, (void*)pattern);
-    return ret ? ((chttpserver_router_node_t*)ret->data)->handler : NULL;
+    chttpserver_router_node_t * node = (chttpserver_router_node_t*)osl_list_find(router->table, (osl_compare_cb)_compare_node_pattern, (void*)pattern);
+    return node ? node->handler : NULL;
 }
 
