@@ -61,7 +61,8 @@ void chttpserver_header_set_field_value(chttpserver_header_t * header, const cha
     if (field == NULL) {
 	header->fields = osl_list_append(header->fields, chttpserver_header_field_init_with_name_value(chttpserver_header_field_new(), name, value));
     } else {
-	osl_list_free(field->values, (osl_free_cb)chttpserver_header_field_free);
+	osl_list_free(field->values, osl_safe_free);
+	field->values = NULL;
 	field->values = osl_list_append(field->values, osl_strdup(value));
     }
 }

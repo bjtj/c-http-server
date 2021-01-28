@@ -32,6 +32,7 @@ extern "C" {
     extern OSL_EXPORT const char * chttpserver_request_get_transfer_value(chttpserver_request_t *);
     extern OSL_EXPORT void chttpserver_request_set_transfer_value(chttpserver_request_t *, const char *);
     extern OSL_EXPORT void chttpserver_request_set_transfer_type(chttpserver_request_t *, chttpserver_transfer_type_e);
+    extern OSL_EXPORT void chttpserver_request_set_transfer_types(chttpserver_request_t *, osl_list_t *);
     extern OSL_EXPORT const char * chttpserver_request_get_connection_value(chttpserver_request_t *);
     extern OSL_EXPORT void chttpserver_request_set_connection_value(chttpserver_request_t *, const char *);
     extern OSL_EXPORT osl_bool chttpserver_request_is_chunked_transfer(chttpserver_request_t *);

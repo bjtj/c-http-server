@@ -26,7 +26,6 @@ static chttpserver_header_t * _read_header(chttpserver_server_t * server, chttps
 	int count = chttpserver_connection_select(conn, 100);
 	if (count < 0) {
 	    /* TODO: error */
-	    fprintf(stderr, "error\n");
 	    break;
 	}
 	
@@ -37,7 +36,6 @@ static chttpserver_header_t * _read_header(chttpserver_server_t * server, chttps
 	if (chttpserver_connection_is_readable(conn)) {
 	    len = chttpserver_connection_recv(conn, &ch, 1);
 	    if (len == 0) {
-		fprintf(stdout, "closed\n");
 		break;
 	    }
 	    osl_string_buffer_append_buffer(sb, &ch, 1);
@@ -94,10 +92,8 @@ static void _handle_request_header(chttpserver_server_t * server, chttpserver_re
 {
     chttpserver_route_handler_cb handler = chttpserver_router_get_handler(server->router, chttpserver_request_get_uri(req));
     if (handler == NULL) {
-	printf("NOT FOUND\n");
 	_notfound(server, req, res);
     } else {
-	printf("HANDLE - '%s'\n", chttpserver_request_get_uri(req));
 	handler(server, req, res);
     }
 
@@ -126,7 +122,6 @@ static void _on_connect(chttpserver_server_t * server, chttpserver_connection_t 
 	_handle_request_header(server, req, res);
 
 	keep_alive = chttpserver_request_is_keep_alive(req);
-	printf("keep alive: %s\n", keep_alive ? "Y" : "N");
 
 	chttpserver_request_free(req);
 	chttpserver_response_free(res);
@@ -214,7 +209,6 @@ static void _run(chttpserver_server_t * server)
 {
     while (!server->done) {
 	if (_poll(server) == osl_false) {
-	    fprintf(stderr, "_poll() failed\n");
 	    break;
 	}
 	osl_idle(10);

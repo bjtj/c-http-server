@@ -1,4 +1,5 @@
 #include <osl/str.h>
+#include <osl/string_buffer.h>
 #include "request.h"
 
 
@@ -80,7 +81,28 @@ void chttpserver_request_set_transfer_value(chttpserver_request_t * req, const c
 
 void chttpserver_request_set_transfer_type(chttpserver_request_t * req, chttpserver_transfer_type_e type)
 {
-    chttpserver_header_set_field_value(req->header, "Transfer-Encoding", chttpserver_transfer_type_to_str(type));
+    chttpserver_request_set_transfer_value(req, chttpserver_transfer_type_to_str(type));
+}
+
+static void _iter_join_transfer_types(int idx, void * data, void * user)
+{
+    osl_string_buffer_t * sb = (osl_string_buffer_t *)user;
+    chttpserver_transfer_type_e * type = (chttpserver_transfer_type_e *)data;
+    const char * type_str = chttpserver_transfer_type_to_str(*type);
+    if (idx > 0) {
+	osl_string_buffer_append(sb, ", ");
+    }
+    osl_string_buffer_append(sb, type_str);
+}
+
+void chttpserver_request_set_transfer_types(chttpserver_request_t * req, osl_list_t * types)
+{
+    char * value;
+    osl_string_buffer_t * sb = osl_string_buffer_init(osl_string_buffer_new());
+    osl_list_each(types, _iter_join_transfer_types, sb);
+    value = osl_string_buffer_to_str_and_free(sb);
+    chttpserver_request_set_transfer_value(req, value);
+    osl_safe_free(value);
 }
 
 const char * chttpserver_request_get_connection_value(chttpserver_request_t * req)
